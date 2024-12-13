@@ -26,4 +26,4 @@ dependencies:
 dev_dependencies:
   pedantic: ^1.11.1
   build_config: ^1.0.0
-  flutter_lints: ^2.0.1
+  flutter_lints: ^5.0.0
