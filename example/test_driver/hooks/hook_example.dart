@@ -33,8 +33,9 @@ class HookExample extends Hook {
   Future<void> onAfterScenario(
     TestConfiguration config,
     String scenario,
-    Iterable<Tag> tags,
-  ) async {
+    Iterable<Tag> tags, {
+    bool passed = true,
+  }) async {
     print("running hook after scenario '$scenario'");
   }
 }

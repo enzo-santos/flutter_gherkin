@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter_gherkin/flutter_gherkin.dart';
 import 'package:gherkin/gherkin.dart';
+
 import 'hooks/hook_example.dart';
 import 'steps/colour_parameter.dart';
 import 'steps/given_I_pick_a_colour_step.dart';
@@ -16,14 +18,14 @@ Future<void> main() {
     steps,
     featurePath: 'features/*.*.feature',
     targetAppPath: 'test_driver/app.dart',
-  )
-    ..hooks = [
+    hooks: [
       HookExample(),
       // AttachScreenshotOnFailedStepHook(), // takes a screenshot of each step failure and attaches it to the world object
-    ]
-    ..customStepParameterDefinitions = [
+    ],
+    customStepParameterDefinitions: [
       ColourParameter(),
-    ]
+    ],
+  )
     ..logFlutterProcessOutput = true
     ..verboseFlutterProcessLogs = true
     ..restartAppBetweenScenarios = true

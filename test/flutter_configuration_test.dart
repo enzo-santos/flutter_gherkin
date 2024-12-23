@@ -29,9 +29,10 @@ void main() {
       });
 
       test('common step definition added to existing steps', () {
-        final config = FlutterTestConfiguration()
-          ..stepDefinitions = [MockStepDefinition()]
-          ..customStepParameterDefinitions = [MockParameter()];
+        final config = FlutterTestConfiguration(
+          stepDefinitions: [MockStepDefinition()],
+          customStepParameterDefinitions: [MockParameter()],
+        );
         expect(config.stepDefinitions!.length, 1);
 
         config.prepare();

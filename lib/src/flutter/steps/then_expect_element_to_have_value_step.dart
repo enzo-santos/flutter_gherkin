@@ -1,6 +1,6 @@
+import 'package:flutter_driver/flutter_driver.dart';
 import 'package:flutter_gherkin/src/flutter/flutter_world.dart';
 import 'package:flutter_gherkin/src/flutter/utils/driver_utils.dart';
-import 'package:flutter_driver/flutter_driver.dart';
 import 'package:gherkin/gherkin.dart';
 
 /// Expects the element found with the given control key to have the given string value.
@@ -24,7 +24,10 @@ StepDefinitionGeneric ThenExpectElementToHaveValue() {
         );
         context.expect(text, value);
       } catch (e) {
-        await context.reporter.message('Step error: $e', MessageLevel.error);
+        switch (context.reporter) {
+          case MessageReporter reporter:
+            await reporter.message('Step error: $e', MessageLevel.error);
+        }
         rethrow;
       }
     },

@@ -1,29 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+
+import 'package:flutter_driver/flutter_driver.dart';
 import 'package:flutter_gherkin/flutter_gherkin.dart';
-import 'package:flutter_gherkin/src/flutter/build_mode.dart';
-import 'package:flutter_gherkin/src/flutter/flutter_world.dart';
 import 'package:flutter_gherkin/src/flutter/hooks/app_runner_hook.dart';
 import 'package:flutter_gherkin/src/flutter/parameters/existence_parameter.dart';
 import 'package:flutter_gherkin/src/flutter/parameters/swipe_direction_parameter.dart';
-import 'package:flutter_gherkin/src/flutter/steps/given_i_open_the_drawer_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/restart_app_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/sibling_contains_text_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/swipe_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/tap_text_within_widget_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/tap_widget_of_type_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/tap_widget_of_type_within_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/tap_widget_with_text_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/text_exists_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/text_exists_within_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/then_expect_element_to_have_value_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/wait_until_key_exists_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/wait_until_type_exists_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/when_fill_field_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/when_pause_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/when_tap_widget_step.dart';
-import 'package:flutter_gherkin/src/flutter/steps/when_tap_the_back_button_step.dart';
-import 'package:flutter_driver/flutter_driver.dart';
 import 'package:gherkin/gherkin.dart';
 
 import 'steps/then_expect_widget_to_be_present_step.dart';
@@ -38,10 +20,32 @@ class FlutterTestConfiguration extends TestConfiguration {
     Iterable<StepDefinitionGeneric<World>> steps, {
     String featurePath = 'features/*.*.feature',
     String targetAppPath = 'test_driver/app.dart',
+    String featureDefaultLanguage = 'en',
+    ExecutionOrder order = ExecutionOrder.random,
+    Duration defaultTimeout = const Duration(seconds: 10),
+    FeatureFileMatcher featureFileMatcher = const IoFeatureFileAccessor(),
+    FeatureFileReader featureFileReader = const IoFeatureFileAccessor(),
+    String? tagExpression,
+    Iterable<CustomParameter<dynamic>>? customStepParameterDefinitions,
+    Iterable<Hook>? hooks,
+    Future<World> Function(TestConfiguration)? createWorld,
+    int stepMaxRetries = 0,
+    Duration retryDelay = const Duration(),
   }) {
-    return FlutterTestConfiguration()
-      ..features = [RegExp(featurePath)]
-      ..reporters = [
+    return FlutterTestConfiguration(
+      featureDefaultLanguage: featureDefaultLanguage,
+      order: order,
+      defaultTimeout: defaultTimeout,
+      featureFileMatcher: featureFileMatcher,
+      featureFileReader: featureFileReader,
+      tagExpression: tagExpression,
+      customStepParameterDefinitions: customStepParameterDefinitions,
+      hooks: hooks,
+      createWorld: createWorld,
+      stepMaxRetries: stepMaxRetries,
+      retryDelay: retryDelay,
+      features: [RegExp(featurePath)],
+      reporters: [
         StdoutReporter(MessageLevel.error),
         ProgressReporter(),
         TestRunSummaryReporter(),
@@ -51,12 +55,31 @@ class FlutterTestConfiguration extends TestConfiguration {
           logInfoMessages: false,
           logWarningMessages: false,
         ),
-      ]
+      ],
+      stepDefinitions: steps,
+      stopAfterTestFailed: true,
+    )
       ..targetAppPath = targetAppPath
-      ..stepDefinitions = steps
-      ..restartAppBetweenScenarios = true
-      ..stopAfterTestFailed = true;
+      ..restartAppBetweenScenarios = true;
   }
+
+  FlutterTestConfiguration({
+    super.features,
+    super.featureDefaultLanguage,
+    super.order,
+    super.defaultTimeout,
+    super.featureFileMatcher,
+    super.featureFileReader,
+    super.stopAfterTestFailed,
+    super.tagExpression,
+    super.stepDefinitions,
+    super.customStepParameterDefinitions,
+    super.hooks,
+    super.reporters,
+    super.createWorld,
+    super.stepMaxRetries,
+    super.retryDelay,
+  });
 
   /// restarts the application under test between each scenario.
   /// Defaults to true to avoid the application being in an invalid state
@@ -186,51 +209,51 @@ class FlutterTestConfiguration extends TestConfiguration {
   }
 
   @override
-  void prepare() {
+  TestConfiguration prepare() {
     _ensureCorrectConfiguration();
-    final providedCreateWorld = createWorld;
-    createWorld = (config) async {
-      FlutterWorld? world;
-      if (providedCreateWorld != null) {
-        world = (await providedCreateWorld(config)) as FlutterWorld;
-      }
-
-      return await createFlutterWorld(config, world);
-    };
-
-    hooks = List.from(hooks ?? <Hook>[])..add(FlutterAppRunnerHook());
-    customStepParameterDefinitions =
-        List.from(customStepParameterDefinitions ?? <CustomParameter>[])
-          ..addAll([
-            ExistenceParameter(),
-            SwipeDirectionParameter(),
-          ]);
-    stepDefinitions = List.from(stepDefinitions ?? <StepDefinitionGeneric>[])
-      ..addAll([
-        ThenExpectElementToHaveValue(),
-        WhenTapBackButtonWidget(),
-        WhenTapWidget(),
-        WhenTapWidgetWithoutScroll(),
-        WhenLongPressWidget(),
-        WhenLongPressWidgetWithoutScroll(),
-        WhenLongPressWidgetForDuration(),
-        GivenOpenDrawer(),
-        WhenPauseStep(),
-        WhenFillFieldStep(),
-        ThenExpectWidgetToBePresent(),
-        RestartAppStep(),
-        SiblingContainsTextStep(),
-        SwipeOnKeyStep(),
-        SwipeOnTextStep(),
-        TapTextWithinWidgetStep(),
-        TapWidgetOfTypeStep(),
-        TapWidgetOfTypeWithinStep(),
-        TapWidgetWithTextStep(),
-        TextExistsStep(),
-        TextExistsWithinStep(),
-        WaitUntilKeyExistsStep(),
-        WaitUntilTypeExistsStep(),
-      ]);
+    return TestConfiguration(
+      createWorld: (config) async {
+        FlutterWorld? world;
+        final providedCreateWorld = createWorld;
+        if (providedCreateWorld != null) {
+          world = (await providedCreateWorld(config)) as FlutterWorld;
+        }
+        return await createFlutterWorld(config, world);
+      },
+      hooks: List.from(hooks ?? <Hook>[])..add(FlutterAppRunnerHook()),
+      customStepParameterDefinitions:
+          List.from(customStepParameterDefinitions ?? <CustomParameter>[])
+            ..addAll([
+              ExistenceParameter(),
+              SwipeDirectionParameter(),
+            ]),
+      stepDefinitions: List.from(stepDefinitions ?? <StepDefinitionGeneric>[])
+        ..addAll([
+          ThenExpectElementToHaveValue(),
+          WhenTapBackButtonWidget(),
+          WhenTapWidget(),
+          WhenTapWidgetWithoutScroll(),
+          WhenLongPressWidget(),
+          WhenLongPressWidgetWithoutScroll(),
+          WhenLongPressWidgetForDuration(),
+          GivenOpenDrawer(),
+          WhenPauseStep(),
+          WhenFillFieldStep(),
+          ThenExpectWidgetToBePresent(),
+          RestartAppStep(),
+          SiblingContainsTextStep(),
+          SwipeOnKeyStep(),
+          SwipeOnTextStep(),
+          TapTextWithinWidgetStep(),
+          TapWidgetOfTypeStep(),
+          TapWidgetOfTypeWithinStep(),
+          TapWidgetWithTextStep(),
+          TextExistsStep(),
+          TextExistsWithinStep(),
+          WaitUntilKeyExistsStep(),
+          WaitUntilTypeExistsStep(),
+        ]),
+    );
   }
 
   Future<FlutterDriver> _attemptDriverConnection(
